@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BOAT AI VISION - AI競艇予想サービス</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0f;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        /* ナビゲーション */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(10, 10, 15, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+            z-index: 1000;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-logo {
+            font-size: 1.2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .nav-btn {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            text-decoration: none;
+        }
+
+        .nav-btn-outline {
+            background: transparent;
+            border: 1px solid #00d4ff;
+            color: #00d4ff;
+        }
+
+        .nav-btn-primary {
+            background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+            color: white;
+        }
+
+        /* ヒーローセクション */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 100px 20px 60px;
+            position: relative;
+            background: radial-gradient(ellipse at center, rgba(123, 47, 247, 0.15) 0%, transparent 70%);
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 20px;
+            padding: 8px 20px;
+            font-size: 0.85rem;
+            color: #00d4ff;
+            margin-bottom: 30px;
+        }
+
+        .hero h1 {
+            font-size: clamp(2.5rem, 8vw, 5rem);
+            font-weight: 900;
+            line-height: 1.1;
+            margin-bottom: 20px;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #00d4ff, #7b2ff7, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: clamp(1rem, 3vw, 1.3rem);
+            color: rgba(255,255,255,0.7);
+            max-width: 600px;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        .hero-stats {
+            display: flex;
+            gap: 40px;
+            margin-bottom: 50px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.5);
+            margin-top: 5px;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            padding: 18px 40px;
+            background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+            border: none;
+            border-radius: 50px;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 50px rgba(0, 212, 255, 0.5);
+        }
+
+        .btn-secondary {
+            padding: 18px 40px;
+            background: transparent;
+            border: 2px solid rgba(0, 212, 255, 0.5);
+            border-radius: 50px;
+            color: #00d4ff;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(0, 212, 255, 0.1);
+        }
+
+        /* プレビューセクション */
+        .preview-section {
+            padding: 80px 20px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: clamp(1.8rem, 5vw, 2.5rem);
+            font-weight: 800;
+            margin-bottom: 50px;
+        }
+
+        .race-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+
+        .race-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .race-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .race-badge {
+            background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .boats-grid {
+            display: grid;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .boat-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 15px;
+        }
+
+        .boat-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        .boat-1 { background: #ffffff; color: #000; }
+        .boat-2 { background: #000000; color: #fff; border: 1px solid #333; }
+        .boat-3 { background: #ff0000; color: #fff; }
+
+        .boat-info {
+            flex: 1;
+        }
+
+        .boat-name {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .boat-grade {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.5);
+            margin-top: 2px;
+        }
+
+        .boat-prob {
+            text-align: right;
+        }
+
+        .prob-bar-container {
+            width: 80px;
+            height: 6px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+            margin-top: 5px;
+        }
+
+        .prob-bar {
+            height: 100%;
+            border-radius: 3px;
+            background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+        }
+
+        .prob-number {
+            font-size: 0.85rem;
+            color: #00d4ff;
+            font-weight: 600;
+        }
+
+        .prediction-preview {
+            background: rgba(0, 212, 255, 0.05);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .prediction-title {
+            font-size: 0.9rem;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 15px;
+        }
+
+        .prediction-numbers {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .pred-num {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 8px;
+            padding: 8px 15px;
+            font-weight: 700;
+            color: #00d4ff;
+        }
+
+        .pred-locked {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 8px 15px;
+            color: rgba(255,255,255,0.3);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .locked-banner {
+            margin-top: 20px;
+            background: linear-gradient(135deg, rgba(123, 47, 247, 0.2), rgba(0, 212, 255, 0.2));
+            border: 1px solid rgba(123, 47, 247, 0.4);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .locked-banner p {
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 15px;
+            font-size: 0.95rem;
+        }
+
+        /* 料金プランセクション */
+        .pricing-section {
+            padding: 80px 20px;
+            background: rgba(255,255,255,0.02);
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .pricing-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 35px;
+            position: relative;
+            transition: transform 0.3s;
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .pricing-card.featured {
+            border-color: rgba(0, 212, 255, 0.5);
+            background: rgba(0, 212, 255, 0.05);
+        }
+
+        .popular-badge {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+            padding: 5px 20px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .plan-name {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .plan-price {
+            font-size: 2.5rem;
+            font-weight: 900;
+            margin-bottom: 5px;
+        }
+
+        .plan-price span {
+            font-size: 1rem;
+            color: rgba(255,255,255,0.5);
+        }
+
+        .plan-desc {
+            color: rgba(255,255,255,0.5);
+            font-size: 0.9rem;
+            margin-bottom: 25px;
+        }
+
+        .plan-features {
+            list-style: none;
+            margin-bottom: 30px;
+        }
+
+        .plan-features li {
+            padding: 8px 0;
+            color: rgba(255,255,255,0.7);
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .plan-features li::before {
+            content: "✓";
+            color: #00d4ff;
+            font-weight: 700;
+        }
+
+        .btn-plan {
+            width: 100%;
+            padding: 15px;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .btn-plan-primary {
+            background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+            color: white;
+        }
+
+        .btn-plan-secondary {
+            background: transparent;
+            border: 2px solid rgba(0, 212, 255, 0.5);
+            color: #00d4ff;
+        }
+
+        /* 当日予想カード */
+        .spot-card {
+            background: linear-gradient(135deg, rgba(255, 107, 107, 0.1), rgba(255, 142, 83, 0.1));
+            border: 1px solid rgba(255, 107, 107, 0.3);
+            border-radius: 20px;
+            padding: 35px;
+            text-align: center;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .spot-price {
+            font-size: 2rem;
+            font-weight: 900;
+            color: #ff6b6b;
+            margin: 15px 0;
+        }
+
+        .spot-desc {
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 25px;
+            font-size: 0.95rem;
+        }
+
+        .btn-spot {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+            border: none;
+            border-radius: 50px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-spot:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(255, 107, 107, 0.3);
+        }
+
+        /* 特徴セクション */
+        .features-section {
+            padding: 80px 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 25px;
+        }
+
+        .feature-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            padding: 25px;
+            text-align: center;
+            transition: border-color 0.3s;
+        }
+
+        .feature-card:hover {
+            border-color: rgba(0, 212, 255, 0.3);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+
+        .feature-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .feature-desc {
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.5);
+            line-height: 1.6;
+        }
+
+        /* 実績セクション */
+        .results-section {
+            padding: 80px 20px;
+            background: rgba(255,255,255,0.02);
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .result-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            padding: 25px;
+            text-align: center;
+        }
+
+        .result-venue {
+            font-size: 0.9rem;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: 10px;
+        }
+
+        .result-combo {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #00d4ff;
+            margin-bottom: 10px;
+        }
+
+        .result-amount {
+            font-size: 1.8rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .result-note {
+            text-align: center;
+            color: rgba(255,255,255,0.3);
+            font-size: 0.75rem;
+            margin-top: 20px;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* FAQセクション */
+        .faq-section {
+            padding: 80px 20px;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .faq-item {
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            margin-bottom: 12px;
+            overflow: hidden;
+        }
+
+        .faq-question {
+            width: 100%;
+            padding: 20px 25px;
+            background: rgba(255,255,255,0.03);
+            border: none;
+            color: white;
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-align: left;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+        }
+
+        .faq-question:hover {
+            background: rgba(255,255,255,0.06);
+        }
+
+        .faq-icon {
+            font-size: 1.2rem;
+            transition: transform 0.3s;
+            flex-shrink: 0;
+        }
+
+        .faq-answer {
+            display: none;
+            padding: 20px 25px;
+            color: rgba(255,255,255,0.6);
+            font-size: 0.9rem;
+            line-height: 1.7;
+            background: rgba(0,0,0,0.2);
+        }
+
+        .faq-answer.active {
+            display: block;
+        }
+
+        /* 注意事項 */
+        .disclaimer {
+            padding: 40px 20px;
+            max-width: 700px;
+            margin: 0 auto;
+            background: rgba(255, 107, 107, 0.05);
+            border-top: 1px solid rgba(255, 107, 107, 0.2);
+        }
+
+        .disclaimer p {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.4);
+            line-height: 1.8;
+        }
+
+        /* フッター */
+        footer {
+            background: rgba(0,0,0,0.5);
+            border-top: 1px solid rgba(255,255,255,0.05);
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .footer-logo {
+            font-size: 1.3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .footer-desc {
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.3);
+            margin-bottom: 25px;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 25px;
+        }
+
+        .footer-links a {
+            color: rgba(255,255,255,0.4);
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover {
+            color: #00d4ff;
+        }
+
+        .footer-copy {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.2);
+        }
+
+        /* モーダル */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: #0f0f1a;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.5);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .modal-plans {
+            display: grid;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .modal-plan {
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .modal-plan:hover, .modal-plan.selected {
+            border-color: #00d4ff;
+            background: rgba(0, 212, 255, 0.05);
+        }
+
+        .modal-plan-name {
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .modal-plan-price {
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: #00d4ff;
+        }
+
+        .modal-plan-desc {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.5);
+            margin-top: 5px;
+        }
+
+        .btn-modal-submit {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+            border: none;
+            border-radius: 50px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-modal-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.3);
+        }
+
+        /* カウントダウン */
+        .countdown-section {
+            padding: 40px 20px;
+            text-align: center;
+            background: rgba(123, 47, 247, 0.05);
+            border-top: 1px solid rgba(123, 47, 247, 0.2);
+            border-bottom: 1px solid rgba(123, 47, 247, 0.2);
+        }
+
+        .countdown-title {
+            font-size: 0.9rem;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: 15px;
+        }
+
+        .countdown-timer {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .countdown-item {
+            text-align: center;
+        }
+
+        .countdown-number {
+            font-size: 2.5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            min-width: 60px;
+            display: block;
+        }
+
+        .countdown-label {
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.4);
+        }
+
+        /* フローティングCTA */
+        .floating-cta {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 999;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 0 20px;
+        }
+
+        .floating-btn {
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .floating-btn-primary {
+            background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+            color: white;
+        }
+
+        .floating-btn-secondary {
+            background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+            color: white;
+        }
+
+        @media (max-width: 600px) {
+            .hero-stats {
+                gap: 25px;
+            }
+            .pricing-grid {
+                grid-template-columns: 1fr;
+            }
+            .floating-cta {
+                bottom: 10px;
+            }
+            .floating-btn {
+                padding: 10px 18px;
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ナビゲーション -->
+    <nav>
+        <div class="nav-logo">🤖 BOAT AI VISION</div>
+        <div class="nav-buttons">
+            <button class="nav-btn nav-btn-outline" onclick="openModal()">月額プランを見る</button>
+            <a href="https://buy.stripe.com/test_3cIdRadmW9Lt9ClfHyfQI01" class="nav-btn nav-btn-primary">当日予想 ¥980</a>
+        </div>
+    </nav>
+
+    <!-- ヒーローセクション -->
+    <section class="hero">
+        <div class="hero-badge">⚡ AI競艇予想サービス</div>
+        <h1>AIが導く<br><span class="gradient-text">勝利の軌跡</span></h1>
+        <p>最先端AIが膨大なデータを分析<br>3連単6点に絞り込んだ高精度予想</p>
+        <div class="hero-stats">
+            <div class="stat-item">
+                <div class="stat-number">73%</div>
+                <div class="stat-label">的中率</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">3連単</div>
+                <div class="stat-label">6点予想</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">日次</div>
+                <div class="stat-label">更新</div>
+            </div>
+        </div>
+        <div class="hero-buttons">
+            <button class="btn-primary" onclick="document.getElementById('pricing').scrollIntoView({behavior:'smooth'})">今すぐ予想を見る</button>
+            <a href="https://buy.stripe.com/test_3cIdRadmW9Lt9ClfHyfQI01" class="btn-secondary">当日予想を購入 ¥980</a>
+        </div>
+    </section>
+
+    <!-- カウントダウン -->
+    <div class="countdown-section">
+        <div class="countdown-title">🏁 本日のレース締切まで</div>
+        <div class="countdown-timer">
+            <div class="countdown-item">
+                <span class="countdown-number" id="hours">00</span>
+                <div class="countdown-label">時間</div>
+            </div>
+            <div class="countdown-item">
+                <span class="countdown-number" id="minutes">00</span>
+                <div class="countdown-label">分</div>
+            </div>
+            <div class="countdown-item">
+                <span class="countdown-number" id="seconds">00</span>
+                <div class="countdown-label">秒</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- プレビューセクション -->
+    <section class="preview-section">
+        <h2 class="section-title">🏁 本日のAI予想<br><span style="font-size:0.6em;color:rgba(255,255,255,0.4)">AIが厳選した注目レース</span></h2>
+        <div class="race-card">
+            <div class="race-header">
+                <div class="race-title">戸田競艇 第9R</div>
+                <div class="race-badge">🔥 注目レース</div>
+            </div>
+            <div class="boats-grid">
+                <div class="boat-item">
+                    <div class="boat-number boat-1">1</div>
+                    <div class="boat-info">
+                        <div class="boat-name">田中 太郎</div>
+                        <div class="boat-grade">A1級 / 勝率7.82</div>
+                    </div>
+                    <div class="boat-prob">
+                        <div class="prob-number">92%</div>
+                        <div class="prob-bar-container">
+                            <div class="prob-bar" style="width:92%"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="boat-item">
+                    <div class="boat-number boat-3">3</div>
+                    <div class="boat-info">
+                        <div class="boat-name">鈴木 一郎</div>
+                        <div class="boat-grade">A1級 / 勝率7.21</div>
+                    </div>
+                    <div class="boat-prob">
+                        <div class="prob-number">78%</div>
+                        <div class="prob-bar-container">
+                            <div class="prob-bar" style="width:78%"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="boat-item">
+                    <div class="boat-number boat-2">2</div>
+                    <div class="boat-info">
+                        <div class="boat-name">佐藤 健二</div>
+                        <div class="boat-grade">A2級 / 勝率6.95</div>
+                    </div>
+                    <div class="boat-prob">
+                        <div class="prob-number">65%</div>
+                        <div class="prob-bar-container">
+                            <div class="prob-bar" style="width:65%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="prediction-preview">
+                <div class="prediction-title">AI推奨 3連単（サンプル）</div>
+                <div class="prediction-numbers">
+                    <div class="pred-num">1-3-2</div>
+                    <div class="pred-num">1-3-4</div>
+                    <div class="pred-num">1-2-3</div>
+                    <div class="pred-locked">🔒 ???</div>
+                    <div class="pred-locked">🔒 ???</div>
+                    <div class="pred-locked">🔒 ???</div>
+                </div>
+                <div class="locked-banner">
+                    <p>🔒 残り3点の予想と詳細分析は<br>会員限定公開です</p>
+                    <button class="btn-primary" onclick="openModal()" style="font-size:0.9rem;padding:12px 30px;">会員登録して全て見る</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 料金プランセクション -->
+    <section class="pricing-section" id="pricing">
+        <h2 class="section-title">💎 料金プラン<br><span style="font-size:0.6em;color:rgba(255,255,255,0.4)">あなたに合ったプランをお選びください</span></h2>
+        <div class="pricing-grid">
+            <div class="pricing-card featured">
+                <div class="popular-badge">人気No.1</div>
+                <div class="plan-name">プレミアムプラン</div>
+                <div class="plan-price">¥2,980<span>/月</span></div>
+                <div class="plan-desc">本気で稼ぎたい方向け</div>
+                <ul class="plan-features">
+                    <li>全レース3連単6点予想</li>
+                    <li>AI詳細分析レポート</li>
+                    <li>リアルタイム更新</li>
+                    <li>的中速報通知</li>
+                    <li>過去データ閲覧</li>
+                    <li>優先サポート</li>
+                </ul>
+                <button class="btn-plan btn-plan-primary" onclick="window.location.href='https://buy.stripe.com/test_9B6dRa82C7DleWF7b2fQI03'">プレミアムで始める</button>
+            </div>
+            <div class="pricing-card">
+                <div class="plan-name">ライトプラン</div>
+                <div class="plan-price">¥1,280<span>/月</span></div>
+                <div class="plan-desc">まずは試してみたい方向け</div>
+                <ul class="plan-features">
+                    <li>注目レース3連単6点予想</li>
+                    <li>基本AI分析</li>
+                    <li>1日1レース配信</li>
+                    <li>メールサポート</li>
+                </ul>
+                <button class="btn-plan btn-plan-secondary" onclick="window.location.href='https://buy.stripe.com/test_8x200kfv47Dl5m5anefQI02'">ライトで始める</button>
+            </div>
+            <div class="spot-card">
+                <div style="font-size:1.5rem">⚡</div>
+                <div class="plan-name" style="margin-top:10px">当日限定予想</div>
+                <div class="spot-price">¥980</div>
+                <div style="font-size:0.8rem;color:#ff6b6b;margin-bottom:10px">1回限り</div>
+                <div class="spot-desc">サブスク不要！今日だけの予想を単品購入</div>
+                <button class="btn-spot" onclick="window.location.href='https://buy.stripe.com/test_3cIdRadmW9Lt9ClfHyfQI01'">当日予想を購入する</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- 特徴セクション -->
+    <section class="features-section">
+        <h2 class="section-title">🤖 AIの強み<br><span style="font-size:0.6em;color:rgba(255,255,255,0.4)">なぜBOAT AI VISIONが選ばれるのか</span></h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🧠</div>
+                <div class="feature-title">深層学習AI分析</div>
+                <div class="feature-desc">100万件以上のレースデータを学習。選手の調子・コース特性・天候など複合要因を瞬時に分析します。</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎯</div>
+                <div class="feature-title">6点絞り込み予想</div>
+                <div class="feature-desc">3連単を6点に厳選。投資額6,000円で高配当を狙う効率的な予想スタイルです。</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <div class="feature-title">リアルタイム更新</div>
+                <div class="feature-desc">直前情報（展示タイム・気象変化）を取り込み、レース直前まで予想を最適化します。</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <div class="feature-title">詳細分析レポート</div>
+                <div class="feature-desc">各艇の勝率・コース別成績・モーター性能など、根拠のある分析データを提供します。</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 実績セクション -->
+    <section class="results-section">
+        <h2 class="section-title">📈 直近の実績<br><span style="font-size:0.6em;color:rgba(255,255,255,0.4)">※サンプルデータです</span></h2>
+        <div class="results-grid">
+            <div class="result-card">
+                <div class="result-venue">戸田 第8R</div>
+                <div class="result-combo">3連単 2-1-4</div>
+                <div class="result-amount">¥48,200</div>
+                <div style="font-size:0.75rem;color:rgba(255,255,255,0.3);margin-top:5px">払戻金</div>
+            </div>
+            <div class="result-card">
+                <div class="result-venue">江戸川 第11R</div>
+                <div class="result-combo">3連単 1-3-5</div>
+                <div class="result-amount">¥32,600</div>
+                <div style="font-size:0.75rem;color:rgba(255,255,255,0.3);margin-top:5px">払戻金</div>
+            </div>
+            <div class="result-card">
+                <div class="result-venue">平和島 第9R</div>
+                <div class="result-combo">3連単 3-1-2</div>
+                <div class="result-amount">¥21,400</div>
+                <div style="font-size:0.75rem;color:rgba(255,255,255,0.3);margin-top:5px">払戻金</div>
+            </div>
+            <div class="result-card">
+                <div class="result-venue">多摩川 第7R</div>
+                <div class="result-combo">3連単 1-2-6</div>
+                <div class="result-amount">¥15,800</div>
+                <div style="font-size:0.75rem;color:rgba(255,255,255,0.3);margin-top:5px">払戻金</div>
+            </div>
+        </div>
+        <div class="result-note">※上記はサンプルデータです。実際の結果を保証するものではありません。</div>
+    </section>
+
+    <!-- FAQセクション -->
+    <section class="faq-section">
+        <h2 class="section-title">❓ よくある質問</h2>
+        <div class="faq-item">
+            <button class="faq-question" onclick="toggleFaq(this)">
+                予想はいつ公開されますか？
+                <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">毎日午前10時に当日のレース予想を公開します。重要レースは前日夜に先行公開することもあります。</div>
+        </div>
+        <div class="faq-item">
+            <button class="faq-question" onclick="toggleFaq(this)">
+                解約はいつでもできますか？
+                <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">はい、いつでも解約可能です。解約後も契約期間終了まではサービスをご利用いただけます。</div>
+        </div>
+        <div class="faq-item">
+            <button class="faq-question" onclick="toggleFaq(this)">
+                支払い方法は何がありますか？
+                <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">クレジットカード（VISA・Mastercard・JCB・AMEX）がご利用いただけます。決済はStripeで安全に処理されます。</div>
+        </div>
+        <div class="faq-item">
+            <button class="faq-question" onclick="toggleFaq(this)">
+                的中を保証していますか？
+                <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">的中・利益の保証はしておりません。AIによる高精度な予想情報を提供するサービスです。投資は自己責任でお願いします。</div>
+        </div>
+        <div class="faq-item">
+            <button class="faq-question" onclick="toggleFaq(this)">
+                プランの変更はできますか？
+                <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">はい、いつでもプランの変更が可能です。アップグレードは即時反映、ダウングレードは次回更新日から適用されます。</div>
+        </div>
+    </section>
+
+    <!-- 注意事項 -->
+    <div class="disclaimer">
+        <p>
+            ⚠️ 重要な注意事項<br>
+            ・本サービスは競艇の予想情報を提供するものであり、的中・利益を保証するものではありません。<br>
+            ・公営競技（競艇）への参加は20歳以上の方に限ります。<br>
+            ・ギャンブル依存症にご注意ください。のめり込みに注意し、自己の判断と責任においてご利用ください。<br>
+            ・投資は余裕資金の範囲内で行ってください。<br>
+            ・本サービスの情報を参考にした結果生じた損害について、当社は一切の責任を負いません。
+        </p>
+    </div>
+
+    <!-- フッター -->
+    <footer>
+        <div class="footer-logo">BOAT AI VISION</div>
+        <div class="footer-desc">最先端AIによる競艇予想サービス。<br>データに基づいた高精度な予想をお届けします。</div>
+        <div class="footer-links">
+            <a href="#">特定商取引法</a>
+            <a href="#">利用規約</a>
+            <a href="#">プライバシーポリシー</a>
+            <a href="#">お問い合わせ</a>
+        </div>
+        <div class="footer-copy">© 2025 BOAT AI VISION. All rights reserved.</div>
+    </footer>
+
+    <!-- フローティングCTA -->
+    <div class="floating-cta">
+        <button class="floating-btn floating-btn-primary" onclick="openModal()">月額プランを見る</button>
+        <a href="https://buy.stripe.com/test_3cIdRadmW9Lt9ClfHyfQI01" class="floating-btn floating-btn-secondary">当日予想 ¥980</a>
+    </div>
+
+    <!-- モーダル -->
+    <div class="modal-overlay" id="planModal">
+        <div class="modal">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <div class="modal-title">💎 月額プランを選択</div>
+            <div class="modal-plans">
+                <div class="modal-plan selected" id="plan-premium" onclick="selectPlan('premium')">
+                    <div class="modal-plan-name">👑 プレミアムプラン</div>
+                    <div class="modal-plan-price">¥2,980/月</div>
+                    <div class="modal-plan-desc">全レース予想・AI詳細分析・優先サポート</div>
+                </div>
+                <div class="modal-plan" id="plan-light" onclick="selectPlan('light')">
+                    <div class="modal-plan-name">⚡ ライトプラン</div>
+                    <div class="modal-plan-price">¥1,280/月</div>
+                    <div class="modal-plan-desc">注目レース予想・基本AI分析・1日1レース</div>
+                </div>
+            </div>
+            <button class="btn-modal-submit" onclick="goToCheckout()">申し込みに進む →</button>
+        </div>
+    </div>
+
+    <script>
+        // モーダル制御
+        let selectedPlan = 'premium';
+
+        function openModal() {
+            document.getElementById('planModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('planModal').classList.remove('active');
+        }
+
+        function selectPlan(plan) {
+            selectedPlan = plan;
+            document.getElementById('plan-premium').classList.remove('selected');
+            document.getElementById('plan-light').classList.remove('selected');
+            document.getElementById('plan-' + plan).classList.add('selected');
+        }
+
+        function goToCheckout() {
+            if (selectedPlan === 'premium') {
+                window.location.href = 'https://buy.stripe.com/test_9B6dRa82C7DleWF7b2fQI03';
+            } else {
+                window.location.href = 'https://buy.stripe.com/test_8x200kfv47Dl5m5anefQI02';
+            }
+        }
+
+        // モーダル外クリックで閉じる
+        document.getElementById('planModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+
+        // FAQ開閉
+        function toggleFaq(btn) {
+            const answer = btn.nextElementSibling;
+            const icon = btn.querySelector('.faq-icon');
+            answer.classList.toggle('active');
+            icon.textContent = answer.classList.contains('active') ? '−' : '+';
+        }
+
+        // カウントダウン（当日23:59まで）
+        function updateCountdown() {
+            const now = new Date();
+            const end = new Date();
+            end.setHours(23, 59, 0, 0);
+            const diff = end - now;
+
+            if (diff > 0) {
+                const h = Math.floor(diff / 3600000);
+                const m = Math.floor((diff % 3600000) / 60000);
+                const s = Math.floor((diff % 60000) / 1000);
+                document.getElementById('hours').textContent = String(h).padStart(2, '0');
+                document.getElementById('minutes').textContent = String(m).padStart(2, '0');
+                document.getElementById('seconds').textContent = String(s).padStart(2, '0');
+            }
+        }
+
+        updateCountdown();
+        setInterval(updateCountdown, 1000);
+    </script>
+</body>
+</html>
