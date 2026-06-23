@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>決済完了 | BOAT AI VISION</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3e 50%, #0d1b2a 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      padding: 20px;
+    }
+    .container {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(0,212,255,0.3);
+      border-radius: 20px;
+      padding: 40px 30px;
+      max-width: 500px;
+      width: 100%;
+      text-align: center;
+      backdrop-filter: blur(10px);
+    }
+    .success-icon {
+      font-size: 60px;
+      margin-bottom: 20px;
+    }
+    h1 {
+      font-size: 24px;
+      color: #00d4ff;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      color: #aaa;
+      font-size: 14px;
+      margin-bottom: 30px;
+    }
+    .token-box {
+      background: rgba(0,212,255,0.1);
+      border: 2px solid #00d4ff;
+      border-radius: 15px;
+      padding: 25px;
+      margin: 20px 0;
+    }
+    .token-label {
+      font-size: 12px;
+      color: #aaa;
+      margin-bottom: 10px;
+    }
+    .yoso-url {
+      font-size: 13px;
+      color: #00d4ff;
+      word-break: break-all;
+      background: rgba(0,0,0,0.3);
+      padding: 12px;
+      border-radius: 8px;
+      margin: 10px 0;
+    }
+    .copy-btn {
+      background: linear-gradient(135deg, #00d4ff, #0099cc);
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 25px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 10px;
+      width: 100%;
+      font-weight: bold;
+    }
+    .copy-btn:active { opacity: 0.8; }
+    .timer-box {
+      background: rgba(255,165,0,0.1);
+      border: 1px solid rgba(255,165,0,0.5);
+      border-radius: 10px;
+      padding: 15px;
+      margin: 20px 0;
+      font-size: 14px;
+      color: #ffa500;
+    }
+    .timer {
+      font-size: 28px;
+      font-weight: bold;
+      color: #ffa500;
+    }
+    .warning {
+      font-size: 12px;
+      color: #ff6b6b;
+      margin-top: 15px;
+      line-height: 1.6;
+    }
+    .loading {
+      color: #aaa;
+      font-size: 16px;
+      padding: 20px;
+    }
+    .error-box {
+      background: rgba(255,0,0,0.1);
+      border: 1px solid rgba(255,0,0,0.5);
+      border-radius: 10px;
+      padding: 15px;
+      color: #ff6b6b;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="success-icon">🎉</div>
+    <h1>決済完了！</h1>
+    <p class="subtitle">ご購入ありがとうございます</p>
+
+    <div id="content">
+      <div class="loading">⏳ 予想ページを準備中...</div>
+    </div>
+  </div>
+
+  <script>
+    // ===== 設定 =====
+    const SUPABASE_URL = 'https://dtjrwkktvnkjmltvbism.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0anJ3a2t0dm5ram1sdHZiaXNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxNDIxNjksImV4cCI6MjA5NzcxODE2OX0.VeLPscP3lDvEhtzZiS8MSTr4dmpvrylXds8gDyLLv0Q';
+    const BASE_URL = 'https://boataivision.github.io';
+    // ================
+
+    // ランダムトークン生成
+    function generateToken() {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+      let token = '';
+      for (let i = 0; i < 32; i++) {
+        token += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return token;
+    }
+
+    // Supabaseにトークン保存
+    async function saveToken(token) {
+      const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString(); // 30分後
+      const response = await fetch(`${SUPABASE_URL}/rest/v1/tokens`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({
+          token: token,
+          used: false,
+          expires_at: expiresAt
+        })
+      });
+      return response.ok;
+    }
+
+    // カウントダウンタイマー
+    function startTimer(minutes) {
+      let totalSeconds = minutes * 60;
+      const timerEl = document.getElementById('timer');
+      const interval = setInterval(() => {
+        totalSeconds--;
+        if (totalSeconds <= 0) {
+          clearInterval(interval);
+          timerEl.textContent = '00:00';
+          timerEl.style.color = '#ff6b6b';
+          return;
+        }
+        const m = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+        const s = (totalSeconds % 60).toString().padStart(2, '0');
+        timerEl.textContent = `${m}:${s}`;
+      }, 1000);
+    }
+
+    // コピー機能
+    function copyURL() {
+      const url = document.getElementById('yoso-url-text').textContent;
+      navigator.clipboard.writeText(url).then(() => {
+        const btn = document.getElementById('copy-btn');
+        btn.textContent = '✅ コピーしました！';
+        setTimeout(() => { btn.textContent = '📋 URLをコピーする'; }, 2000);
+      }).catch(() => {
+        // フォールバック
+        const el = document.createElement('textarea');
+        el.value = url;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+        const btn = document.getElementById('copy-btn');
+        btn.textContent = '✅ コピーしました！';
+        setTimeout(() => { btn.textContent = '📋 URLをコピーする'; }, 2000);
+      });
+    }
+
+    // ページを閉じる前に警告
+    window.addEventListener('beforeunload', function(e) {
+      e.preventDefault();
+      e.returnValue = 'URLをコピーしましたか？ページを閉じると予想が見られなくなります。';
+    });
+
+    // メイン処理
+    async function main() {
+      const token = generateToken();
+      const yosoURL = `${BASE_URL}/yoso.html?token=${token}`;
+
+      try {
+        const saved = await saveToken(token);
+        if (!saved) throw new Error('保存失敗');
+
+        document.getElementById('content').innerHTML = `
+          <div class="token-box">
+            <div class="token-label">📊 あなたの予想閲覧URL（30分間有効）</div>
+            <div class="yoso-url" id="yoso-url-text">${yosoURL}</div>
+            <button class="copy-btn" id="copy-btn" onclick="copyURL()">📋 URLをコピーする</button>
+          </div>
+
+          <div class="timer-box">
+            ⏱️ 残り時間
+            <div class="timer" id="timer">30:00</div>
+          </div>
+
+          <p class="warning">
+            ⚠️ このURLは<strong>30分間・1回のみ</strong>有効です<br>
+            必ずURLをコピーしてから閲覧してください<br>
+            スクリーンショットも推奨します📸
+          </p>
+        `;
+
+        startTimer(30);
+
+      } catch (e) {
+        document.getElementById('content').innerHTML = `
+          <div class="error-box">
+            ❌ エラーが発生しました<br>
+            お手数ですが、下記メールにご連絡ください<br><br>
+            <strong>support@boataivision.com</strong>
+          </div>
+        `;
+      }
+    }
+
+    main();
+  </script>
+</body>
+</html>
